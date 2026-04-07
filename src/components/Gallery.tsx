@@ -7,7 +7,7 @@ export const Gallery = () => {
 
   return (
     <section id="gallery" className="py-24 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
           <div className="max-w-2xl">
             <h2 className="text-sm font-bold tracking-[0.3em] uppercase mb-4" style={{ color: data.themeColor }}>
@@ -21,8 +21,8 @@ export const Gallery = () => {
             {data.galleryDescription}
           </p>
         </div>
-
-        <div className="flex flex-col gap-8">
+ 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {(data.galleryImages || []).map((img, i) => (
             <motion.div
               key={i}
@@ -30,12 +30,12 @@ export const Gallery = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: i * 0.1 }}
               viewport={{ once: true }}
-              className="relative w-full rounded-3xl overflow-hidden shadow-2xl"
+              className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-lg bg-gray-200"
             >
               <img
                 src={img}
                 alt={`Gallery ${i + 1}`}
-                className="w-full h-auto object-cover"
+                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                 referrerPolicy="no-referrer"
                 loading="lazy"
               />
