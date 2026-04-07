@@ -30,6 +30,7 @@ const Admin = () => {
   const { data, user, isAuthReady, updateData, resetToDefaults, saveToFirestore, addNotice, deleteNotice, updateNotice, compressAndSetImage } = useSite();
   const [activeTab, setActiveTab] = useState<'content' | 'images' | 'notices' | 'seo' | 'quickmenu' | 'export' | 'inquiries'>('content');
   const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
   const [copied, setCopied] = useState(false);
 
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
@@ -76,11 +77,13 @@ const Admin = () => {
 
   const handleSave = async () => {
     setIsSaving(true);
+    setSaveStatus({ type: null, message: '' });
     try {
       await saveToFirestore();
-      alert('모든 변경사항이 서버에 저장되었습니다.');
+      setSaveStatus({ type: 'success', message: '✅ 서버 저장 완료!' });
+      setTimeout(() => setSaveStatus({ type: null, message: '' }), 3000);
     } catch (error: any) {
-      alert(error.message || '저장에 실패했습니다. 권한이 없거나 네트워크 오류일 수 있습니다.');
+      setSaveStatus({ type: 'error', message: `❌ 저장 실패: ${error.message || '알 수 없는 오류'}` });
     } finally {
       setIsSaving(false);
     }
@@ -817,7 +820,14 @@ const Admin = () => {
             </div>
           )}
 
-          <div className="mt-12 flex justify-end">
+          <div className="mt-12 flex flex-col items-end gap-4">
+            {saveStatus.type && (
+              <div className={`px-4 py-2 rounded-xl text-sm font-bold animate-bounce ${
+                saveStatus.type === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+              }`}>
+                {saveStatus.message}
+              </div>
+            )}
             <button 
               onClick={handleSave}
               disabled={isSaving}
