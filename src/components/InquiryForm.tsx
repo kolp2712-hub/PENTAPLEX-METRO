@@ -37,17 +37,17 @@ export const InquiryForm = () => {
       }
 
       // 2. Formspree로 전송 (이메일 알림용)
+      const submissionData = new FormData();
+      submissionData.append('성함', name);
+      submissionData.append('연락처', phone);
+      submissionData.append('관심타입', type);
+      submissionData.append('문의내용', message || '내용 없음');
+      submissionData.append('_subject', `[펜타플렉스 메트로] 새로운 상담 예약: ${name}님`);
+
       const response = await fetch('https://formspree.io/f/mgopdden', {
         method: 'POST',
-        body: JSON.stringify({
-          name,
-          phone,
-          type,
-          message: message || '',
-          _subject: `[펜타플렉스 메트로] 새로운 상담 예약: ${name}님`,
-        }),
+        body: submissionData,
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
       });
