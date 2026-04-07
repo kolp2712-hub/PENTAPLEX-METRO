@@ -70,6 +70,7 @@ interface SiteContextType {
   isAuthReady: boolean;
   isDataLoaded: boolean;
   updateData: (newData: Partial<SiteData>) => void;
+  resetToDefaults: () => void;
   saveToFirestore: () => Promise<void>;
   addNotice: (notice: { title: string; content: string }) => void;
   deleteNotice: (id: string) => void;
@@ -206,6 +207,12 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setData(prev => ({ ...prev, ...newData }));
   };
 
+  const resetToDefaults = () => {
+    if (window.confirm('모든 데이터를 초기값(펜타플렉스 메트로)으로 되돌리시겠습니까? 현재 저장된 모든 내용은 사라집니다.')) {
+      setData(INITIAL_SITE_DATA);
+    }
+  };
+
   const saveToFirestore = async () => {
     if (!user) {
       console.warn('User not authenticated. Cannot save to Firestore.');
@@ -337,6 +344,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isAuthReady, 
       isDataLoaded,
       updateData, 
+      resetToDefaults,
       saveToFirestore, 
       addNotice, 
       deleteNotice, 

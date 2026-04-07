@@ -27,7 +27,7 @@ import { ImageManager } from '../components/admin/ImageManager';
 import { InquiryManager } from '../components/admin/InquiryManager';
 
 const Admin = () => {
-  const { data, user, isAuthReady, updateData, saveToFirestore, addNotice, deleteNotice, updateNotice, compressAndSetImage } = useSite();
+  const { data, user, isAuthReady, updateData, resetToDefaults, saveToFirestore, addNotice, deleteNotice, updateNotice, compressAndSetImage } = useSite();
   const [activeTab, setActiveTab] = useState<'content' | 'images' | 'notices' | 'seo' | 'quickmenu' | 'export' | 'inquiries'>('content');
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -257,7 +257,7 @@ const Admin = () => {
             }`}
           >
             <Share className="w-4 h-4" />
-            데이터에 대해
+            시스템 및 데이터
           </button>
         </nav>
         <div className="p-4 border-t border-gray-100">
@@ -282,7 +282,7 @@ const Admin = () => {
               {activeTab === 'quickmenu' && '퀵메뉴 설정'}
               {activeTab === 'notices' && '게시글 관리'}
               {activeTab === 'seo' && 'SEO 설정'}
-              {activeTab === 'export' && '데이터 내보내기 (수동 업데이트용)'}
+              {activeTab === 'export' && '시스템 및 데이터 관리'}
             </h2>
             <Link to="/" className="text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-1">
               사이트 보기 <ChevronRight className="w-4 h-4" />
@@ -758,6 +758,27 @@ const Admin = () => {
 
           {activeTab === 'export' && (
             <div className="space-y-6">
+              <div className="bg-white rounded-3xl p-8 shadow-sm border border-red-100 space-y-6">
+                <h3 className="text-lg font-bold text-red-600 flex items-center gap-2">
+                  <Trash2 className="w-5 h-5" /> 데이터 초기화 (긴급 복구용)
+                </h3>
+                <p className="text-sm text-gray-600">
+                  실제 사이트에서 '평택' 등 옛날 내용이 계속 나올 때 사용하세요. 
+                  이 버튼을 누르면 현재 화면의 내용을 코딩된 기본값(펜타플렉스 메트로)으로 강제 초기화합니다.
+                </p>
+                <button
+                  onClick={() => {
+                    resetToDefaults();
+                  }}
+                  className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-100"
+                >
+                  데이터베이스 초기값으로 리셋하기
+                </button>
+                <p className="text-xs text-red-400 font-medium">
+                  * 리셋 후 반드시 하단의 [변경사항 저장 완료] 버튼을 눌러야 실제 사이트에 반영됩니다.
+                </p>
+              </div>
+
               <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-bold flex items-center gap-2">
