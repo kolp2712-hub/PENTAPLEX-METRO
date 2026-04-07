@@ -279,12 +279,20 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     try {
+      // Check for document size limits (approximate)
+      for (const [key, value] of Object.entries(parts)) {
+        const size = JSON.stringify(value).length;
+        if (size > 800000) { // 800KB limit for safety
+          throw new Error(`'${key}' 데이터가 너무 큽니다. 이미지를 줄이거나 삭제해 주세요. (현재 크기: ${(size / 1024).toFixed(1)}KB)`);
+        }
+      }
+
       const promises = Object.entries(parts).map(([key, value]) => {
         const docRef = doc(db, 'site_content', key);
         return setDoc(docRef, value);
       });
       await Promise.all(promises);
-    } catch (error) {
+    } catch (error: any) {
       handleFirestoreError(error, OperationType.WRITE, 'site_content');
       throw error;
     }
@@ -319,8 +327,8 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const compressAndSetImage = async (file: File, callback: (base64: string) => void) => {
     const options = {
-      maxSizeMB: 0.2, // 200KB로 품질 상향 (데이터 분산 저장 덕분에 여유가 생김)
-      maxWidthOrHeight: 1920, // 해상도 상향
+      maxSizeMB: 0.08, // 80KB로 다시 하향 (안정성 확보)
+      maxWidthOrHeight: 1280, // 해상도 하향
       useWebWorker: true,
     };
     try {
