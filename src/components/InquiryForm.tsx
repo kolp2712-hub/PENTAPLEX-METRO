@@ -23,23 +23,38 @@ export const InquiryForm = () => {
     
     try {
       // 1. 파이어베이스 Firestore에 저장 (관리자 페이지 확인용)
-      await addDoc(collection(db, 'inquiries'), {
-        name,
-        phone,
-        type,
-        message: message || '',
-        createdAt: new Date().toISOString(),
-        status: 'new'
-      });
+      try {
+        await addDoc(collection(db, 'inquiries'), {
+          name,
+          phone,
+          type,
+          message: message || '',
+          createdAt: new Date().toISOString(),
+          status: 'new'
+        });
+      } catch (fsErr) {
+        console.error('Firestore save failed:', fsErr);
+      }
 
       // 2. Formspree로 전송 (이메일 알림용)
-      await fetch('https://formspree.io/f/mgopdden', {
+      const response = await fetch('https://formspree.io/f/mgopdden', {
         method: 'POST',
-        body: formData,
+        body: JSON.stringify({
+          name,
+          phone,
+          type,
+          message: message || '',
+          _subject: `[펜타플렉스 메트로] 새로운 상담 예약: ${name}님`,
+        }),
         headers: {
+          'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
       });
+
+      if (!response.ok) {
+        throw new Error('Formspree 전송 실패');
+      }
 
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 8000);
