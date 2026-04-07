@@ -801,13 +801,13 @@ const Admin = () => {
                 </div>
                 
                 <div className="p-6 bg-red-50 rounded-2xl border border-red-100">
-                  <h4 className="text-red-800 font-bold text-sm mb-2">⚠️ 필독: Netlify/GitHub 수동 업데이트 방법</h4>
+                  <h4 className="text-red-800 font-bold text-sm mb-2">⚠️ 필독: Cloudflare/GitHub 수동 업데이트 방법</h4>
                   <ol className="text-red-700 text-xs space-y-2 list-decimal ml-4">
                     <li>아래의 코드를 <strong>[코드 복사하기]</strong> 버튼으로 복사합니다.</li>
                     <li>내 컴퓨터의 프로젝트 폴더에서 <strong>src/constants.ts</strong> 파일을 엽니다.</li>
                     <li>파일의 전체 내용을 지우고 복사한 코드를 붙여넣습니다.</li>
                     <li>GitHub에 <strong>Commit & Push</strong> 합니다.</li>
-                    <li>Netlify가 자동으로 빌드하여 모든 방문자에게 변경사항이 적용됩니다.</li>
+                    <li>Cloudflare Pages가 자동으로 빌드하여 모든 방문자에게 변경사항이 적용됩니다.</li>
                   </ol>
                 </div>
 
