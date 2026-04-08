@@ -305,6 +305,9 @@ const Admin = () => {
                     <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
                     <span>관리자: {user.email}</span>
                   </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-400 border-l pl-4">
+                    <span>시스템 버전: 2026.04.08.01 (최신)</span>
+                  </div>
                 </div>
               )}
             </div>
