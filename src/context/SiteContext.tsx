@@ -108,27 +108,18 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  // 2. Firestore Connection Test & Initial Load
+  // 2. Initial Load Fallback
   useEffect(() => {
-    async function testConnection() {
-      try {
-        const docRef = doc(db, 'site', 'data');
-        await getDocFromServer(docRef);
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('the client is offline')) {
-          console.error("Please check your Firebase configuration. The client is offline.");
-        }
-      }
-    }
-    testConnection();
+    // Firestore가 응답하지 않더라도 3초 후에는 사이트를 보여줌 (기본 데이터 사용)
+    const timer = setTimeout(() => {
+      setIsDataLoaded(true);
+    }, 3000);
+    return () => clearTimeout(timer);
   }, []);
 
-  // 3. Real-time Firestore Listener (Split Data)
+  // 3. Real-time Firestore Listener (Optimized)
   useEffect(() => {
-    const collections = [
-      'metadata', 'hero', 'highlights', 'gallery', 
-      'location', 'floorplans', 'notices', 'footer', 'e_model', 'floating_banner'
-    ];
+    const collections = ['config', 'assets', 'notices'];
     
     const unsubscribes = collections.map(col => {
       const docRef = doc(db, 'site_content', col);
@@ -139,7 +130,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const newData = { ...prev, ...partData };
             
             // Data Migration / Merging for specific fields
-            if (col === 'floorplans' && partData.floorPlans) {
+            if (partData.floorPlans) {
               newData.floorPlans = partData.floorPlans.map((plan: any) => {
                 if (!plan.images && plan.image) return { ...plan, images: [plan.image] };
                 if (!plan.images) return { ...plan, images: [] };
@@ -150,11 +141,9 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return newData;
           });
         }
-        // Mark as loaded once we get the first response (even if empty)
         setIsDataLoaded(true);
       }, (error) => {
         handleFirestoreError(error, OperationType.GET, `site_content/${col}`);
-        // Also mark as loaded on error to prevent infinite loading
         setIsDataLoaded(true);
       });
     });
@@ -219,62 +208,48 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     
-    // Split data into parts
+    // Optimized Split: Config (Text), Assets (Images), Notices
     const parts = {
-      metadata: {
+      config: {
         seoTitle: data.seoTitle,
         seoDescription: data.seoDescription,
         themeColor: data.themeColor,
         fontFamily: data.fontFamily,
         title: data.title,
         logoIcon: data.logoIcon,
-        representativePhone: data.representativePhone
-      },
-      hero: {
+        representativePhone: data.representativePhone,
         heroSlogan: data.heroSlogan,
         heroDescription: data.heroDescription,
         heroButtonText: data.heroButtonText,
-        heroImages: data.heroImages
-      },
-      highlights: {
         highlightsTitle: data.highlightsTitle,
         highlightsSubtitle: data.highlightsSubtitle,
-        highlights: data.highlights
-      },
-      gallery: {
+        highlights: data.highlights,
         galleryTitle: data.galleryTitle,
         gallerySubtitle: data.gallerySubtitle,
         galleryDescription: data.galleryDescription,
-        galleryImages: data.galleryImages
-      },
-      location: {
         locationTitle: data.locationTitle,
         locationSubtitle: data.locationSubtitle,
-        locationMaps: data.locationMaps,
         locationMapUrl: data.locationMapUrl,
         locationButtonText: data.locationButtonText,
-        locationFeatures: data.locationFeatures
-      },
-      floorplans: {
+        locationFeatures: data.locationFeatures,
         floorPlansTitle: data.floorPlansTitle,
         floorPlansSubtitle: data.floorPlansSubtitle,
-        floorPlans: data.floorPlans
+        eModelHouseUrl: data.eModelHouseUrl,
+        footerCopyright: data.footerCopyright,
+        footerInfo: data.footerInfo,
+        quickMenu: data.quickMenu,
+        floatingBanner: data.floatingBanner
+      },
+      assets: {
+        heroImages: data.heroImages,
+        galleryImages: data.galleryImages,
+        locationMaps: data.locationMaps,
+        floorPlans: data.floorPlans // Floorplans often contain images
       },
       notices: {
         noticesTitle: data.noticesTitle,
         noticesSubtitle: data.noticesSubtitle,
         notices: data.notices
-      },
-      e_model: {
-        eModelHouseUrl: data.eModelHouseUrl
-      },
-      footer: {
-        footerCopyright: data.footerCopyright,
-        footerInfo: data.footerInfo,
-        quickMenu: data.quickMenu
-      },
-      floating_banner: {
-        floatingBanner: data.floatingBanner
       }
     };
 
@@ -282,7 +257,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Check for document size limits (approximate)
       for (const [key, value] of Object.entries(parts)) {
         const size = JSON.stringify(value).length;
-        if (size > 800000) { // 800KB limit for safety
+        if (size > 900000) { // 900KB limit for safety
           throw new Error(`'${key}' 데이터가 너무 큽니다. 이미지를 줄이거나 삭제해 주세요. (현재 크기: ${(size / 1024).toFixed(1)}KB)`);
         }
       }

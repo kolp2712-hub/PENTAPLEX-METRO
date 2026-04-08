@@ -83,7 +83,13 @@ const Admin = () => {
       setSaveStatus({ type: 'success', message: '✅ 서버 저장 완료!' });
       setTimeout(() => setSaveStatus({ type: null, message: '' }), 3000);
     } catch (error: any) {
-      setSaveStatus({ type: 'error', message: `❌ 저장 실패: ${error.message || '알 수 없는 오류'}` });
+      let errorMessage = error.message || '알 수 없는 오류';
+      
+      if (errorMessage.includes('resource-exhausted') || errorMessage.includes('Quota exceeded')) {
+        errorMessage = '❌ 일일 무료 저장 한도(Quota)를 초과했습니다. 내일 오전 중에 초기화되니 잠시 후 다시 시도해 주세요. (상담 신청 알림은 정상 작동합니다)';
+      }
+      
+      setSaveStatus({ type: 'error', message: errorMessage });
     } finally {
       setIsSaving(false);
     }

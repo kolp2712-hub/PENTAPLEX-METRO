@@ -150,14 +150,14 @@ export const INITIAL_SITE_DATA: SiteData = {
     address: "부산광역시 사하구 신평동 546번지 일원",
     phone: "1588-0000"
   },
-
+  
   // Quick Menu
   quickMenu: {
     kakaoUrl: "https://pf.kakao.com/",
     phone: "1588-0000",
     facebookUrl: "https://www.facebook.com/"
   },
-
+  
   // Floating Banner
   floatingBanner: {
     line1: "동매역 0m 초역세권!",
