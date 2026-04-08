@@ -108,14 +108,28 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  // 2. Initial Load Fallback
+  // 2. Initial Load Fallback & Connection Test
   useEffect(() => {
-    // Firestore가 응답하지 않더라도 3초 후에는 사이트를 보여줌 (기본 데이터 사용)
+    const testConnection = async () => {
+      try {
+        await getDocFromServer(doc(db, 'site_content', 'config'));
+        console.log('Firestore connection test successful');
+      } catch (error: any) {
+        if (error.message?.includes('offline')) {
+          console.error('Firestore is offline. Check network or config.');
+        }
+      }
+    };
+    
+    if (isAuthReady) {
+      testConnection();
+    }
+
     const timer = setTimeout(() => {
       setIsDataLoaded(true);
     }, 3000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [isAuthReady]);
 
   // 3. Real-time Firestore Listener (Optimized)
   useEffect(() => {
@@ -210,8 +224,11 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const saveToFirestore = async () => {
     if (!user) {
-      console.warn('User not authenticated. Cannot save to Firestore.');
-      return;
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    if (user.email !== 'kolp2712@gmail.com') {
+      throw new Error(`관리자 권한이 없습니다. (현재 계정: ${user.email})`);
     }
     
     // Optimized Split: Config (Text), Assets (Images), Notices
@@ -258,17 +275,19 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     try {
-      // Check for document size limits (approximate)
+      let totalSize = 0;
       for (const [key, value] of Object.entries(parts)) {
         const size = JSON.stringify(value).length;
-        if (size > 900000) { // 900KB limit for safety
-          throw new Error(`'${key}' 데이터가 너무 큽니다. 이미지를 줄이거나 삭제해 주세요. (현재 크기: ${(size / 1024).toFixed(1)}KB)`);
+        totalSize += size;
+        if (size > 1000000) { // 1MB limit
+          throw new Error(`'${key}' 데이터가 너무 큽니다(${(size / 1024).toFixed(0)}KB). 이미지를 줄여주세요.`);
         }
       }
+      console.log(`Total save size: ${(totalSize / 1024).toFixed(1)}KB`);
 
-      // Timeout promise to prevent hanging on quota errors
+      // Timeout promise
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('저장 시간이 초과되었습니다. 할당량 초과이거나 네트워크 상태가 불안정합니다.')), 15000)
+        setTimeout(() => reject(new Error('저장 시간이 초과되었습니다. 네트워크가 불안정하거나 데이터가 너무 큽니다.')), 30000)
       );
 
       const writePromises = Object.entries(parts).map(([key, value]) => {
