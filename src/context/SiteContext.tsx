@@ -119,6 +119,8 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // 3. Real-time Firestore Listener (Optimized)
   useEffect(() => {
+    if (!isAuthReady) return; // Wait for auth to be ready
+
     const collections = ['config', 'assets_hero', 'assets_gallery', 'assets_location', 'assets_floorplans', 'notices'];
     
     const unsubscribes = collections.map(col => {
@@ -151,27 +153,31 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       unsubscribes.forEach(unsub => unsub());
     };
-  }, []);
+  }, [isAuthReady]);
 
   // 4. SEO Updates
   useEffect(() => {
-    const title = data.seoTitle || INITIAL_SITE_DATA.seoTitle;
-    const desc = data.seoDescription || INITIAL_SITE_DATA.seoDescription;
-    const image = data.heroImages?.[0] || "https://picsum.photos/seed/vista-hero/1200/630";
-    const url = window.location.href;
+    if (!data) return;
+    const title = data.seoTitle || INITIAL_SITE_DATA.seoTitle || "펜타플렉스 메트로";
+    const desc = data.seoDescription || INITIAL_SITE_DATA.seoDescription || "";
+    const image = data.heroImages?.[0] || "https://picsum.photos/seed/penta-hero/1200/630";
+    const url = typeof window !== 'undefined' ? window.location.href : "";
 
     document.title = title;
 
     const updateMeta = (selector: string, attr: string, value: string) => {
+      if (!value) return;
       let element = document.querySelector(selector);
       if (element) {
         element.setAttribute(attr, value);
       } else {
         element = document.createElement('meta');
         if (selector.startsWith('meta[name')) {
-          (element as HTMLMetaElement).name = selector.split('"')[1];
+          const nameMatch = selector.match(/"([^"]+)"/);
+          if (nameMatch) (element as HTMLMetaElement).name = nameMatch[1];
         } else {
-          (element as HTMLMetaElement).setAttribute('property', selector.split('"')[1]);
+          const propMatch = selector.match(/"([^"]+)"/);
+          if (propMatch) (element as HTMLMetaElement).setAttribute('property', propMatch[1]);
         }
         element.setAttribute(attr, value);
         document.head.appendChild(element);
