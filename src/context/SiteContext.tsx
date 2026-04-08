@@ -69,6 +69,7 @@ interface SiteContextType {
   user: User | null;
   isAuthReady: boolean;
   isDataLoaded: boolean;
+  isOnline: boolean;
   updateData: (newData: Partial<SiteData>) => void;
   resetToDefaults: () => void;
   saveToFirestore: () => Promise<void>;
@@ -98,6 +99,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
 
   // 1. Auth Listener
   useEffect(() => {
@@ -113,8 +115,10 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const testConnection = async () => {
       try {
         await getDocFromServer(doc(db, 'site_content', 'config'));
+        setIsOnline(true);
         console.log('Firestore connection test successful');
       } catch (error: any) {
+        setIsOnline(false);
         if (error.message?.includes('offline')) {
           console.error('Firestore is offline. Check network or config.');
         }
@@ -224,14 +228,13 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const saveToFirestore = async () => {
     if (!user) {
-      throw new Error('로그인이 필요합니다.');
+      throw new Error('로그인이 필요합니다. 구글 로그인을 다시 진행해 주세요.');
     }
 
-    if (user.email !== 'kolp2712@gmail.com') {
+    if (user.email?.toLowerCase() !== 'kolp2712@gmail.com') {
       throw new Error(`관리자 권한이 없습니다. (현재 계정: ${user.email})`);
     }
     
-    // Optimized Split: Config (Text), Assets (Images), Notices
     const parts: Record<string, any> = {
       config: {
         seoTitle: data.seoTitle,
@@ -275,29 +278,22 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     try {
-      let totalSize = 0;
+      // Sequential save to avoid overwhelming the connection/quota
       for (const [key, value] of Object.entries(parts)) {
         const size = JSON.stringify(value).length;
-        totalSize += size;
-        if (size > 1000000) { // 1MB limit
-          throw new Error(`'${key}' 데이터가 너무 큽니다(${(size / 1024).toFixed(0)}KB). 이미지를 줄여주세요.`);
+        if (size > 1000000) {
+          throw new Error(`'${key}' 데이터가 너무 큽니다(${(size / 1024).toFixed(0)}KB). 사진을 몇 개 지워주세요.`);
         }
-      }
-      console.log(`Total save size: ${(totalSize / 1024).toFixed(1)}KB`);
-
-      // Timeout promise
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('저장 시간이 초과되었습니다. 네트워크가 불안정하거나 데이터가 너무 큽니다.')), 30000)
-      );
-
-      const writePromises = Object.entries(parts).map(([key, value]) => {
+        
         const docRef = doc(db, 'site_content', key);
-        return setDoc(docRef, value);
-      });
-      
-      await Promise.race([Promise.all(writePromises), timeoutPromise]);
+        await setDoc(docRef, value);
+        console.log(`Saved ${key} (${(size / 1024).toFixed(1)}KB)`);
+      }
     } catch (error: any) {
       handleFirestoreError(error, OperationType.WRITE, 'site_content');
+      if (error.message?.includes('quota')) {
+        throw new Error('일일 저장 한도를 초과했습니다. 내일 다시 시도해 주세요.');
+      }
       throw error;
     }
   };
@@ -331,8 +327,8 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const compressAndSetImage = async (file: File, callback: (base64: string) => void) => {
     const options = {
-      maxSizeMB: 0.08, // 80KB로 다시 하향 (안정성 확보)
-      maxWidthOrHeight: 1280, // 해상도 하향
+      maxSizeMB: 0.04, // 40KB로 더 강력하게 압축 (초경량화)
+      maxWidthOrHeight: 1024, // 해상도 최적화
       useWebWorker: true,
     };
     try {
@@ -355,6 +351,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user, 
       isAuthReady, 
       isDataLoaded,
+      isOnline,
       updateData, 
       resetToDefaults,
       saveToFirestore, 

@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronRight,
   LayoutDashboard,
+  Loader2,
   Palette,
   Type,
   Upload,
@@ -27,7 +28,7 @@ import { ImageManager } from '../components/admin/ImageManager';
 import { InquiryManager } from '../components/admin/InquiryManager';
 
 const Admin = () => {
-  const { data, user, isAuthReady, updateData, resetToDefaults, saveToFirestore, addNotice, deleteNotice, updateNotice, compressAndSetImage } = useSite();
+  const { data, user, isAuthReady, isOnline, updateData, resetToDefaults, saveToFirestore, addNotice, deleteNotice, updateNotice, compressAndSetImage } = useSite();
   const [activeTab, setActiveTab] = useState<'content' | 'images' | 'notices' | 'seo' | 'quickmenu' | 'export' | 'inquiries'>('content');
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
@@ -36,7 +37,7 @@ const Admin = () => {
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   const ADMIN_EMAIL = 'kolp2712@gmail.com';
-  const isAuthorized = user?.email === ADMIN_EMAIL && user?.emailVerified;
+  const isAuthorized = user?.email?.toLowerCase() === ADMIN_EMAIL;
 
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
@@ -284,15 +285,29 @@ const Admin = () => {
       <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 lg:pb-8">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">
-              {activeTab === 'content' && '콘텐츠 관리'}
-              {activeTab === 'inquiries' && '상담문의 관리'}
-              {activeTab === 'images' && '이미지 관리'}
-              {activeTab === 'quickmenu' && '퀵메뉴 설정'}
-              {activeTab === 'notices' && '게시글 관리'}
-              {activeTab === 'seo' && 'SEO 설정'}
-              {activeTab === 'export' && '시스템 및 데이터 관리'}
-            </h2>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {activeTab === 'content' && '콘텐츠 관리'}
+                {activeTab === 'inquiries' && '상담문의 관리'}
+                {activeTab === 'images' && '이미지 관리'}
+                {activeTab === 'quickmenu' && '퀵메뉴 설정'}
+                {activeTab === 'notices' && '게시글 관리'}
+                {activeTab === 'seo' && 'SEO 설정'}
+                {activeTab === 'export' && '시스템 및 데이터 관리'}
+              </h2>
+              {user && (
+                <div className="flex items-center gap-4 mt-1">
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+                    <span>{isOnline ? '서버 연결됨' : '서버 연결 끊김'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                    <span>관리자: {user.email}</span>
+                  </div>
+                </div>
+              )}
+            </div>
             <Link to="/" className="text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-1">
               사이트 보기 <ChevronRight className="w-4 h-4" />
             </Link>
@@ -837,10 +852,21 @@ const Admin = () => {
             <button 
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-2 px-8 py-4 bg-gray-900 text-white font-bold rounded-2xl shadow-xl hover:bg-gray-800 transition-all active:scale-95 disabled:opacity-50"
+              className={`flex items-center gap-2 px-8 py-4 font-bold rounded-2xl shadow-xl transition-all active:scale-95 disabled:opacity-50 ${
+                isSaving ? 'bg-gray-400' : 'bg-gray-900 hover:bg-gray-800'
+              }`}
             >
-              <Save className="w-5 h-5" /> 
-              {isSaving ? '저장 중...' : '변경사항 저장 완료'}
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" /> 
+                  서버에 저장 중...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" /> 
+                  변경사항 저장하기
+                </>
+              )}
             </button>
           </div>
         </div>
