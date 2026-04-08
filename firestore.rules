@@ -1,55 +1,36 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
     // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: site_content
+    // Document ID: config, assets_hero, assets_gallery, assets_location, assets_floorplans, notices
+    //
+    // Collection: inquiries
+    // Fields: name, phone, content, createdAt, status
+    // ===============================================================
+
     // Helper Functions
-    // ===============================================================
-    
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     function isAdmin() {
       return isAuthenticated() && 
-             request.auth.token.email == "kolp2712@gmail.com" && 
-             request.auth.token.email_verified == true;
+        (request.auth.token.email == "kolp2712@gmail.com" && request.auth.token.email_verified == true);
     }
 
-    function isValidInquiry(data) {
-      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             data.phone is string && data.phone.size() > 0 && data.phone.size() < 20 &&
-             data.type is string && data.type.size() > 0 && data.type.size() < 50 &&
-             (!('message' in data) || (data.message is string && data.message.size() < 1000)) &&
-             data.createdAt is string &&
-             data.status in ['new', 'contacted', 'closed'];
-    }
-
-    // ===============================================================
-    // Site Data Rules
-    // ===============================================================
-
-    match /site_content/{document=**} {
+    // Site Content: Only Admin can write, anyone can read (for the public site)
+    match /site_content/{documentId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // ===============================================================
-    // Inquiry Rules
-    // ===============================================================
-
+    // Inquiries: Anyone can create, only Admin can read/update/delete
     match /inquiries/{inquiryId} {
-      // Anyone can submit an inquiry
-      allow create: if isValidInquiry(request.resource.data);
-      
-      // Only admin can view or manage inquiries
+      allow create: if true;
       allow read, update, delete: if isAdmin();
-    }
-    
-    // Default deny
-    match /{document=**} {
-      allow read, write: if false;
     }
   }
 }

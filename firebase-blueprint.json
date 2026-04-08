@@ -1,71 +1,50 @@
 {
   "entities": {
-    "SiteData": {
-      "title": "Site Configuration",
-      "description": "Main configuration and content for the landing page",
+    "SiteContent": {
+      "title": "Site Content",
+      "description": "Stores all website content including text and base64 images",
       "type": "object",
       "properties": {
         "seoTitle": { "type": "string" },
         "seoDescription": { "type": "string" },
+        "themeColor": { "type": "string" },
+        "fontFamily": { "type": "string" },
         "title": { "type": "string" },
         "logoIcon": { "type": "string" },
+        "representativePhone": { "type": "string" },
         "heroSlogan": { "type": "string" },
         "heroDescription": { "type": "string" },
         "heroButtonText": { "type": "string" },
         "heroImages": { "type": "array", "items": { "type": "string" } },
-        "highlightsTitle": { "type": "string" },
-        "highlightsSubtitle": { "type": "string" },
-        "highlights": { "type": "array", "items": { "type": "object" } },
-        "galleryTitle": { "type": "string" },
-        "gallerySubtitle": { "type": "string" },
-        "galleryDescription": { "type": "string" },
+        "highlights": { "type": "array" },
         "galleryImages": { "type": "array", "items": { "type": "string" } },
-        "locationTitle": { "type": "string" },
-        "locationSubtitle": { "type": "string" },
         "locationMaps": { "type": "array", "items": { "type": "string" } },
-        "locationButtonText": { "type": "string" },
-        "locationFeatures": { "type": "array", "items": { "type": "object" } },
-        "floorPlansTitle": { "type": "string" },
-        "floorPlansSubtitle": { "type": "string" },
-        "floorPlans": { "type": "array", "items": { "type": "object" } },
-        "noticesTitle": { "type": "string" },
-        "noticesSubtitle": { "type": "string" },
-        "notices": { "type": "array", "items": { "type": "object" } },
-        "inquiryTitle": { "type": "string" },
-        "inquirySubtitle": { "type": "string" },
-        "inquiryDescription": { "type": "string" },
-        "inquiryButtonText": { "type": "string" },
-        "footerCopyright": { "type": "string" },
-        "footerInfo": { "type": "object" },
-        "quickMenu": { "type": "object" },
-        "themeColor": { "type": "string" },
-        "fontFamily": { "type": "string" }
+        "floorPlans": { "type": "array" },
+        "notices": { "type": "array" }
       }
     },
     "Inquiry": {
-      "title": "Customer Inquiry",
-      "description": "Form submission from a potential customer",
+      "title": "Inquiry",
+      "description": "Customer consultation requests",
       "type": "object",
       "properties": {
         "name": { "type": "string" },
         "phone": { "type": "string" },
-        "type": { "type": "string" },
-        "message": { "type": "string" },
+        "content": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["new", "contacted", "closed"] }
+        "status": { "type": "string", "enum": ["new", "contacted", "completed"] }
       },
-      "required": ["name", "phone", "type"]
+      "required": ["name", "phone", "createdAt"]
     }
   },
   "firestore": {
-    "/site_content/metadata": { "schema": "SiteData", "description": "SEO and basic site info" },
-    "/site_content/hero": { "schema": "SiteData", "description": "Hero section content" },
-    "/site_content/highlights": { "schema": "SiteData", "description": "Highlights section content" },
-    "/site_content/gallery": { "schema": "SiteData", "description": "Gallery section content" },
-    "/site_content/location": { "schema": "SiteData", "description": "Location section content" },
-    "/site_content/floorplans": { "schema": "SiteData", "description": "Floor plans content" },
-    "/site_content/notices": { "schema": "SiteData", "description": "Notices and news" },
-    "/site_content/footer": { "schema": "SiteData", "description": "Footer and quick menu content" },
-    "/inquiries/{inquiryId}": { "schema": "Inquiry", "description": "Customer inquiries" }
+    "/site_content/{documentId}": {
+      "schema": "SiteContent",
+      "description": "Split documents for site configuration and assets"
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": "Inquiry",
+      "description": "Customer inquiries"
+    }
   }
 }

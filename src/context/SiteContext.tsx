@@ -119,7 +119,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // 3. Real-time Firestore Listener (Optimized)
   useEffect(() => {
-    const collections = ['config', 'assets', 'notices'];
+    const collections = ['config', 'assets_hero', 'assets_gallery', 'assets_location', 'assets_floorplans', 'notices'];
     
     const unsubscribes = collections.map(col => {
       const docRef = doc(db, 'site_content', col);
@@ -209,7 +209,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     // Optimized Split: Config (Text), Assets (Images), Notices
-    const parts = {
+    const parts: Record<string, any> = {
       config: {
         seoTitle: data.seoTitle,
         seoDescription: data.seoDescription,
@@ -240,12 +240,10 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
         quickMenu: data.quickMenu,
         floatingBanner: data.floatingBanner
       },
-      assets: {
-        heroImages: data.heroImages,
-        galleryImages: data.galleryImages,
-        locationMaps: data.locationMaps,
-        floorPlans: data.floorPlans // Floorplans often contain images
-      },
+      assets_hero: { heroImages: data.heroImages },
+      assets_gallery: { galleryImages: data.galleryImages },
+      assets_location: { locationMaps: data.locationMaps },
+      assets_floorplans: { floorPlans: data.floorPlans },
       notices: {
         noticesTitle: data.noticesTitle,
         noticesSubtitle: data.noticesSubtitle,
@@ -262,11 +260,17 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      const promises = Object.entries(parts).map(([key, value]) => {
+      // Timeout promise to prevent hanging on quota errors
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('저장 시간이 초과되었습니다. 할당량 초과이거나 네트워크 상태가 불안정합니다.')), 15000)
+      );
+
+      const writePromises = Object.entries(parts).map(([key, value]) => {
         const docRef = doc(db, 'site_content', key);
         return setDoc(docRef, value);
       });
-      await Promise.all(promises);
+      
+      await Promise.race([Promise.all(writePromises), timeoutPromise]);
     } catch (error: any) {
       handleFirestoreError(error, OperationType.WRITE, 'site_content');
       throw error;
